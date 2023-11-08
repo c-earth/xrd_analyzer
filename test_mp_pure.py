@@ -1,28 +1,34 @@
-import pickle as pkl
-
-from pymatgen.analysis.diffraction.xrd import XRDCalculator
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import numpy as np
+import time
 from pymatgen.core.lattice import Lattice
-
 from pure_phase import XRDPattern
 
-with open('./data/mpid_structure.pkl', 'rb') as f:
-    mpid_structure_dict = pkl.load(f)
+R = 100
+p = 0
+n = 0
+times = []
+for r in range(1, R + 1):
+    print(f'round {r}', end = '\r')
+    try:
+        start = time.time()
+        a = np.random.uniform(1, 3)
+        b = np.random.uniform(1, 3)
+        c = np.random.uniform(1, 3)
+        alpha = np.random.uniform(30, 100)
+        beta = np.random.uniform(30, 100)
+        gamma = np.random.uniform(30, 100)
 
-xrd_calc = XRDCalculator(wavelength = 1, symprec = 1E-5)
-
-def gen_xrd_pattern(structure):
-    sga = SpacegroupAnalyzer(structure, symprec = 1E-5)
-    primitive_structure = sga.find_primitive()
-    pattern = xrd_calc.get_pattern(primitive_structure, scaled = False, two_theta_range = None)
-    return pattern.x
-
-for mpid, structure in mpid_structure_dict.items():
-    twothetas = gen_xrd_pattern(structure)
-    xrdp = XRDPattern.from_twothetas(twothetas, wl = 1)
-    q_a, q_b, q_c, q_alpha, q_beta, q_gamma = xrdp.get_rec_lattice()
-    rec_lattice = Lattice.from_parameters(q_a, q_b, q_c, q_alpha, q_beta, q_gamma)
-    lattice = rec_lattice.reciprocal_lattice
-    print(structure.lattice)
-    print(lattice)
-    break
+        lattice = Lattice.from_parameters(a, b, c, alpha, beta, gamma)
+        rec_lattice = lattice.reciprocal_lattice
+        qs = np.sort(rec_lattice.get_points_in_sphere([[0, 0, 0]], [0, 0, 0], 4*np.pi, zip_results = False)[1])
+        xrdp = XRDPattern(qs[1:31:2])
+        pred_rec_lattice = Lattice.from_parameters(*xrdp.get_rec_lattice())
+        pred_lattice = pred_rec_lattice.reciprocal_lattice
+        if lattice.find_mapping(pred_lattice):
+            p += 1
+        stop = time.time()
+        times.append(stop - start)
+    except:
+        n += 1
+print(f'After {R} trials, {n} invalid rounds, pass rate is {round(100*p/(R-n), 2)} %')
+print(f'Average time: {np.mean(times)} +- {np.std(times)}')
