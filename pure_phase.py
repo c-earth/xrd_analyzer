@@ -6,6 +6,11 @@ class XRDPattern():
         self.wl = wl
         self.q_max = 4*np.pi/self.wl
 
+    @classmethod
+    def from_twothetas(cls, twothetas, wl = 1):
+        qs = 4*np.pi*np.sin(twothetas/2)/wl
+        return cls(qs, wl)
+
     def gen_compatible_qs(self):
         for i_a in range(len(self.qs)):
             for i_b in range(i_a, len(self.qs)):
@@ -17,7 +22,7 @@ class XRDPattern():
                             for q_f in self.qs[(q_a <= self.qs) * (self.qs < (q_a+q_b))]:
                                 yield q_a, q_b, q_c, q_d, q_e, q_f
 
-    def get_lattice(self, tol = 1E-5):
+    def get_rec_lattice(self, tol = 1E-5):
         for i, (q_a, q_b, q_c, q_d, q_e, q_f) in enumerate(self.gen_compatible_qs()):
             alpha = (q_b**2 + q_c**2 - q_d**2)
             beta = (q_c**2 + q_a**2 - q_e**2)
@@ -35,5 +40,4 @@ class XRDPattern():
             q_temp = np.sqrt(q_temp_sq).reshape((1, -1))
             q_diff = np.min(np.abs(self.qs.reshape((-1, 1))-q_temp), axis = 1).flatten()
             if np.all(q_diff < tol):
-                print(f'end at round {i+1}')
                 return q_a, q_b, q_c, np.arccos(alpha/(2*q_b*q_c))*180/np.pi, np.arccos(beta/(2*q_c*q_a))*180/np.pi, np.arccos(gamma/(2*q_a*q_b))*180/np.pi
