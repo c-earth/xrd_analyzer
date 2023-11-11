@@ -18,7 +18,7 @@ def gen_data(discrete_q_abcs, discrete_q_angs):
     for discrete_q_abc, discrete_q_ang, in zip(discrete_q_abcs, discrete_q_angs):
         rec_lattice = Lattice.from_parameters(*discrete_q_abc/100, *discrete_q_ang)
         raw_qs = np.unique(np.round(rec_lattice.get_points_in_sphere([[0, 0, 0]], [0, 0, 0], 2, zip_results = False)[1], decimals = 5))
-        if len(raw_qs) < 40:
+        if len(raw_qs) < 10:
             raw_qs = np.concatenate([np.zeros((40 - len(raw_qs))), raw_qs])
         x = raw_qs[:40].reshape((1, -1))
         y = np.zeros((1, 100, 90))
